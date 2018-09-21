@@ -70,15 +70,25 @@ ADMIN_ENCRYPTED_PASSWORD=""
 echo "-----------------------------------------------------"
 echo "3. (Re)setting OAuth2 Configuration"
 
+# Wait for database 
+until psql -h postgres -U postgres -c "select 1" > /dev/null 2>&1 ; do
+    echo "Waiting for database..."
+    sleep 1
+  done
+
 # Edit /spcgeonode-geodatadir/security/filter/geonode-oauth2/config.xml
 
 # Getting oauth keys and secrets from the database
-CLIENT_ID=$(psql -h postgres -U postgres -c "SELECT client_id FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
-CLIENT_SECRET=$(psql -h postgres -U postgres -c "SELECT client_secret FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
-if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
-    echo "Could not get OAuth2 ID and SECRET from database. Make sure Postgres container is started and Django has finished it's migrations."
-    exit 1
-fi
+while true; do 
+  CLIENT_ID=$(psql -h postgres -U postgres -c "SELECT client_id FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
+  CLIENT_SECRET=$(psql -h postgres -U postgres -c "SELECT client_secret FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
+  if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
+      echo "Waiting for database to be populated by django service..."
+      sleep 1
+    else
+      break
+  fi
+done
 
 sed -i -r "s|<cliendId>.*</cliendId>|<cliendId>$CLIENT_ID</cliendId>|" "/spcgeonode-geodatadir/security/filter/geonode-oauth2/config.xml"
 sed -i -r "s|<clientSecret>.*</clientSecret>|<clientSecret>$CLIENT_SECRET</clientSecret>|" "/spcgeonode-geodatadir/security/filter/geonode-oauth2/config.xml"

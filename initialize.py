@@ -6,7 +6,7 @@ This script initializes Geonode
 # Setting up the  context
 #########################################################
 
-import os, requests, json, uuid, django
+import os, requests, json, uuid, django, time
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spcgeonode.settings')
 django.setup()
 
@@ -19,6 +19,7 @@ from django.core.management import call_command
 from geonode.people.models import Profile
 from oauth2_provider.models import Application
 from django.conf import settings
+from django.db.utils import OperationalError
 
 # Getting the secrets
 admin_username = open('/run/secrets/admin_username','r').read().strip()
@@ -31,7 +32,14 @@ admin_password = open('/run/secrets/admin_password','r').read().strip()
 
 print("-----------------------------------------------------")
 print("1. Running the migrations")
-call_command('migrate', '--noinput')
+while True:
+    try:
+        call_command('migrate', '--noinput')
+        break
+    except OperationalError:
+        print("Waiting for database")
+        time.sleep(1)
+        pass
 
 
 #########################################################
@@ -116,11 +124,13 @@ print("-----------------------------------------------------")
 print("7. Securing GeoServer")
 
 # Getting the old password
-try:
-    r1 = requests.get('http://geoserver:8080/geoserver/rest/security/masterpw.json', auth=(admin_username, admin_password))
-except requests.exceptions.ConnectionError as e:
-    print("Unable to connect to GeoServer. Make sure GeoServer is started and accessible.")
-    exit(1)
+while True:
+    try:
+        r1 = requests.get('http://geoserver:8080/geoserver/rest/security/masterpw.json', auth=(admin_username, admin_password))
+        break
+    except requests.exceptions.ConnectionError as e:
+        print("Waiting for geoserver...")
+        time.sleep(1)
 r1.raise_for_status()
 old_password = json.loads(r1.text)["oldMasterPassword"]
 
