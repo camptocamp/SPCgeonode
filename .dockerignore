@@ -1,7 +1,6 @@
-*.pyc
-Thumbs.db
-_volume_*
-_service_*
-*~
-celerybeat-schedule
-celeryev.pid
+*
+!docker-entrypoint.sh
+!manage.py
+!initialize.py
+!requirements.txt
+!spcgeonode/*.py
