@@ -54,7 +54,7 @@ echo "2. (Re)setting admin account"
 
 ADMIN_USERNAME=$(cat /run/secrets/admin_username |  tr -d '[:space:]')
 ADMIN_PASSWORD=$(cat /run/secrets/admin_password |  tr -d '[:space:]')
-ADMIN_ENCRYPTED_PASSWORD=$(/usr/lib/jvm/java-1.8-openjdk/jre/bin/java -classpath /geoserver-2.12.2/webapps/geoserver/WEB-INF/lib/jasypt-1.8.jar org.jasypt.intf.cli.JasyptStringDigestCLI digest.sh algorithm=SHA-256 saltSizeBytes=16 iterations=100000 input="$ADMIN_PASSWORD" verbose=0 | tr -d '\n')
+ADMIN_ENCRYPTED_PASSWORD=$(/usr/lib/jvm/java-1.8-openjdk/jre/bin/java -classpath $GEOSERVER_HOME/webapps/geoserver/WEB-INF/lib/jasypt-1.9.2.jar org.jasypt.intf.cli.JasyptStringDigestCLI digest.sh algorithm=SHA-256 saltSizeBytes=16 iterations=100000 input="$ADMIN_PASSWORD" verbose=0 | tr -d '\n')
 sed -i -r "s|<user enabled=\".*\" name=\".*\" password=\".*\"/>|<user enabled=\"true\" name=\"$ADMIN_USERNAME\" password=\"digest1:$ADMIN_ENCRYPTED_PASSWORD\"/>|" "/spcgeonode-geodatadir/security/usergroup/default/users.xml"
 # TODO : more selective regexp for this one as there may be several users...
 sed -i -r "s|<userRoles username=\".*\">|<userRoles username=\"$ADMIN_USERNAME\">|" "/spcgeonode-geodatadir/security/role/default/roles.xml"
@@ -70,7 +70,7 @@ ADMIN_ENCRYPTED_PASSWORD=""
 echo "-----------------------------------------------------"
 echo "3. (Re)setting OAuth2 Configuration"
 
-# Wait for database 
+# Wait for database
 until psql -h postgres -U postgres -c "select 1" > /dev/null 2>&1 ; do
     echo "Waiting for database..."
     sleep 1
@@ -79,7 +79,7 @@ until psql -h postgres -U postgres -c "select 1" > /dev/null 2>&1 ; do
 # Edit /spcgeonode-geodatadir/security/filter/geonode-oauth2/config.xml
 
 # Getting oauth keys and secrets from the database
-while true; do 
+while true; do
   CLIENT_ID=$(psql -h postgres -U postgres -c "SELECT client_id FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
   CLIENT_SECRET=$(psql -h postgres -U postgres -c "SELECT client_secret FROM oauth2_provider_application WHERE name='GeoServer'" -t | tr -d '[:space:]')
   if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
@@ -101,7 +101,7 @@ sed -i -r "s|<accessTokenUri>.*</accessTokenUri>|<accessTokenUri>http://nginx/o/
 sed -i -r "s|<checkTokenEndpointUrl>.*</checkTokenEndpointUrl>|<checkTokenEndpointUrl>http://nginx/api/o/v4/tokeninfo/</checkTokenEndpointUrl>|" "/spcgeonode-geodatadir/security/filter/geonode-oauth2/config.xml"
 
 # Edit /security/role/geonode REST role service/config.xml
-sed -i -r "s|<baseUrl>.*</baseUrl>|<baseUrl>http://nginx</baseUrl>|" "/spcgeonode-geodatadir/security/role/geonode REST role service/config.xml" 
+sed -i -r "s|<baseUrl>.*</baseUrl>|<baseUrl>http://nginx</baseUrl>|" "/spcgeonode-geodatadir/security/role/geonode REST role service/config.xml"
 
 CLIENT_ID=""
 CLIENT_SECRET=""
@@ -114,7 +114,7 @@ CLIENT_SECRET=""
 echo "-----------------------------------------------------"
 echo "4. (Re)setting Baseurl"
 
-sed -i -r "s|<proxyBaseUrl>.*</proxyBaseUrl>|<proxyBaseUrl>$BASEURL</proxyBaseUrl>|" "/spcgeonode-geodatadir/global.xml" 
+sed -i -r "s|<proxyBaseUrl>.*</proxyBaseUrl>|<proxyBaseUrl>$BASEURL</proxyBaseUrl>|" "/spcgeonode-geodatadir/global.xml"
 
 
 
@@ -122,5 +122,5 @@ echo "-----------------------------------------------------"
 echo "FINISHED GEOSERVER ENTRYPOINT -----------------------"
 echo "-----------------------------------------------------"
 
-# Run the CMD 
+# Run the CMD
 exec "$@"
