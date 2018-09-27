@@ -39,22 +39,22 @@ services:
     volumes:
       - ./_volume_geodatadir:/spcgeonode-geodatadir/
 
-  letsencrypt:
-    image: olivierdalang/spcgeonode:letsencrypt-dev
-    volumes:
-      - ./_volume_certificates:/spcgeonode-certificates/
-
-  pgdumper:
-    image: olivierdalang/spcgeonode:pgdumper-dev
-    volumes:
-      - ./_volume_pgdumps:/spcgeonode-pgdumps/
-
-  rclone:
-    image: olivierdalang/spcgeonode:rclone-dev
-    volumes:
-      - ./_volume_pgdumps:/spcgeonode-pgdumps/
-      - ./_volume_media:/spcgeonode-media/
-      - ./_volume_geodatadir:/spcgeonode-geodatadir/
+#  letsencrypt:
+#    image: olivierdalang/spcgeonode:letsencrypt-dev
+#    volumes:
+#      - ./_volume_certificates:/spcgeonode-certificates/
+#
+#  pgdumper:
+#    image: olivierdalang/spcgeonode:pgdumper-dev
+#    volumes:
+#      - ./_volume_pgdumps:/spcgeonode-pgdumps/
+#
+#  rclone:
+#    image: olivierdalang/spcgeonode:rclone-dev
+#    volumes:
+#      - ./_volume_pgdumps:/spcgeonode-pgdumps/
+#      - ./_volume_media:/spcgeonode-media/
+#      - ./_volume_geodatadir:/spcgeonode-geodatadir/
 
   postgres:
     ports:
