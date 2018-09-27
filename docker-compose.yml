@@ -23,6 +23,8 @@ x-common-django:
   volumes:
     - static:/spcgeonode-static/
     - media:/spcgeonode-media/
+    # If you want to test changes in geonode
+    # - ../geonode/geonode:/usr/local/lib/python2.7/site-packages/geonode:ro
   secrets:
     - admin_username
     - admin_password

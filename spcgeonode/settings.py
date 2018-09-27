@@ -12,8 +12,10 @@ ROOT_URLCONF = os.getenv('ROOT_URLCONF', 'spcgeonode.urls')
 # Geoserver fix admin password
 ##################################
 
-OGC_SERVER['default']['USER'] = open('/run/secrets/admin_username','r').read().strip()
-OGC_SERVER['default']['PASSWORD'] = open('/run/secrets/admin_password','r').read().strip()
+admin_username = os.environ['ADMIN_USERNAME'] if 'ADMIN_USERNAME' in os.environ else open('/run/secrets/admin_username','r').read().strip()
+admin_password = os.environ['ADMIN_USERNAME'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
+OGC_SERVER['default']['USER'] = admin_username
+OGC_SERVER['default']['PASSWORD'] = admin_password
 
 ##################################
 # Misc / debug / hack
@@ -27,7 +29,7 @@ CELERY_BROKER_URL = 'amqp://rabbitmq:5672'
 CELERY_RESULT_BACKEND = 'django-db'
 
 # We randomize the secret key (based on admin login)
-SECRET_KEY = hashlib.sha512(open('/run/secrets/admin_username','r').read().strip() + open('/run/secrets/admin_password','r').read().strip()).hexdigest()
+SECRET_KEY = hashlib.sha512(admin_username + admin_password).hexdigest()
 
 # We define ALLOWED_HOSTS
 ALLOWED_HOSTS = ['nginx','127.0.0.1'] # We need this for internal api calls from geoserver and for healthchecks
@@ -51,7 +53,7 @@ else:
     raise Exception("Misconfiguration error. You need to set at least one of HTTPS_HOST or HTTP_HOST")
 
 # Manually replace SITEURL whereever it is used in geonode's settings.py (those settings are a mess...)
-GEOSERVER_LOCATION = 'http://nginx/geoserver/'
+GEOSERVER_LOCATION = os.environ.get('GEOSERVER_BASE_URL', 'http://geoserver:8080/geoserver/')
 GEOSERVER_PUBLIC_LOCATION = SITEURL + 'geoserver/'
 GEOSERVER_URL = GEOSERVER_PUBLIC_LOCATION
 OGC_SERVER['default']['LOCATION'] = GEOSERVER_LOCATION

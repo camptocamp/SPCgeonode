@@ -22,9 +22,16 @@ from django.conf import settings
 from django.db.utils import OperationalError
 
 # Getting the secrets
-admin_username = open('/run/secrets/admin_username','r').read().strip()
-admin_password = open('/run/secrets/admin_password','r').read().strip()
+admin_username = os.environ['ADMIN_USERNAME'] if 'ADMIN_USERNAME' in os.environ else open('/run/secrets/admin_username','r').read().strip()
+admin_password = os.environ['ADMIN_USERNAME'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
 
+# Some configs:
+GEOSERVER_INTERNAL_URL = os.environ.get('GEOSERVER_BASE_URL', 'http://geoserver:8080/geoserver/')
+HOST = os.environ.get('HTTPS_HOST', os.environ['HTTP_HOST'])
+PROTOCOL = 'https' if os.getenv('HTTPS_HOST', "") else 'http'
+GEOSERVER_PUBLIC_URL = os.environ.get(
+    'GEOSERVER_PUBLIC_URL',
+    '{}://{}/geoserver/'.format(PROTOCOL, HOST))
 
 #########################################################
 # 1. Running the migrations
@@ -54,7 +61,7 @@ try:
         os.getenv('ADMIN_EMAIL'),
         admin_password
     )
-    print('superuser successfully created')    
+    print('superuser successfully created')
 except django.db.IntegrityError as e:
     superuser = Profile.objects.get(username=admin_username)
     superuser.set_password(admin_password)
@@ -77,8 +84,8 @@ app, created = Application.objects.get_or_create(
     authorization_grant_type='authorization-code'
 )
 redirect_uris = [
-    'http://{}/geoserver'.format(os.getenv('HTTPS_HOST',"") if os.getenv('HTTPS_HOST',"") != "" else os.getenv('HTTP_HOST')),
-    'http://{}/geoserver/index.html'.format(os.getenv('HTTPS_HOST',"") if os.getenv('HTTPS_HOST',"") != "" else os.getenv('HTTP_HOST')),
+    GEOSERVER_PUBLIC_URL.rstrip('/'),
+    GEOSERVER_PUBLIC_URL + 'index.html'
 ]
 app.redirect_uris = "\n".join(redirect_uris)
 app.save()
@@ -126,7 +133,7 @@ print("7. Securing GeoServer")
 # Getting the old password
 while True:
     try:
-        r1 = requests.get('http://geoserver:8080/geoserver/rest/security/masterpw.json', auth=(admin_username, admin_password))
+        r1 = requests.get(GEOSERVER_INTERNAL_URL + 'rest/security/masterpw.json', auth=(admin_username, admin_password))
         break
     except requests.exceptions.ConnectionError as e:
         print("Waiting for geoserver...")
@@ -138,7 +145,7 @@ if old_password=='M(cqp{V1':
     print("Randomizing master password")
     new_password = uuid.uuid4().hex
     data = json.dumps({"oldMasterPassword":old_password,"newMasterPassword":new_password})
-    r2 = requests.put('http://geoserver:8080/geoserver/rest/security/masterpw.json', data=data, headers={'Content-Type': 'application/json'}, auth=(admin_username, admin_password))
+    r2 = requests.put(GEOSERVER_INTERNAL_URL + 'rest/security/masterpw.json', data=data, headers={'Content-Type': 'application/json'}, auth=(admin_username, admin_password))
     r2.raise_for_status()
 else:
     print("Master password was already changed. No changes made.")
