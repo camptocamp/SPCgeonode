@@ -27,7 +27,7 @@ admin_password = os.environ['ADMIN_USERNAME'] if 'ADMIN_PASSWORD' in os.environ 
 
 # Some configs:
 GEOSERVER_INTERNAL_URL = os.environ.get('GEOSERVER_BASE_URL', 'http://geoserver:8080/geoserver/')
-HOST = os.environ.get('HTTPS_HOST', os.environ['HTTP_HOST'])
+HOST = os.environ.get('HTTPS_HOST', os.environ.get('HTTP_HOST'))
 PROTOCOL = 'https' if os.getenv('HTTPS_HOST', "") else 'http'
 GEOSERVER_PUBLIC_URL = os.environ.get(
     'GEOSERVER_PUBLIC_URL',
@@ -58,7 +58,7 @@ print("2. Creating/updating superuser")
 try:
     superuser = Profile.objects.create_superuser(
         admin_username,
-        os.getenv('ADMIN_EMAIL'),
+        os.getenv('ADMIN_EMAIL', ''),
         admin_password
     )
     print('superuser successfully created')

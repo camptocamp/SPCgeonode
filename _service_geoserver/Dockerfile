@@ -18,7 +18,9 @@ RUN echo "Download geoserver for geonode" && \
     rm /geoserver-2.14.0-bin.zip && \
     rm /geoserver-2.14.0/webapps/geoserver/* -rf && \
     unzip -o geoserver-2.14.x.war -d /geoserver-2.14.0/webapps/geoserver/ && \
-    rm /geoserver-2.14.x.war
+    rm /geoserver-2.14.x.war && \
+    mkdir -p /spcgeonode-geodatadir
+
 
 # Download initial data dir
 RUN wget http://build.geonode.org/geoserver/latest/data-2.14.x.zip && \
@@ -35,8 +37,10 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 8080
 
 # Set environnment variables
-ENV GEOSERVER_HOME=/geoserver-2.14.0
-ENV GEOSERVER_DATA_DIR=/spcgeonode-geodatadir
+ENV GEOSERVER_HOME=/geoserver-2.14.0 \
+    GEOSERVER_DATA_DIR=/spcgeonode-geodatadir \
+    GEOSERVER_DB_USER=postgres \
+    GEOSERVER_DB_HOST=postgres
 
 # Run geoserver
 CMD ["bin/startup.sh"]
