@@ -24,7 +24,8 @@ RUN echo "Download geoserver for geonode" && \
 
 # Download initial data dir
 RUN wget http://build.geonode.org/geoserver/latest/data-2.14.x.zip && \
-    unzip /data-2.14.x.zip
+    unzip /data-2.14.x.zip && \
+    rm /data-2.14.x.zip
 
 WORKDIR /geoserver-2.14.0/
 
