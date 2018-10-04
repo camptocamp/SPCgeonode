@@ -13,7 +13,7 @@ ROOT_URLCONF = os.getenv('ROOT_URLCONF', 'spcgeonode.urls')
 ##################################
 
 admin_username = os.environ['ADMIN_USERNAME'] if 'ADMIN_USERNAME' in os.environ else open('/run/secrets/admin_username','r').read().strip()
-admin_password = os.environ['ADMIN_USERNAME'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
+admin_password = os.environ['ADMIN_PASSWORD'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
 OGC_SERVER['default']['USER'] = admin_username
 OGC_SERVER['default']['PASSWORD'] = admin_password
 

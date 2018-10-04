@@ -23,7 +23,7 @@ from django.db.utils import OperationalError
 
 # Getting the secrets
 admin_username = os.environ['ADMIN_USERNAME'] if 'ADMIN_USERNAME' in os.environ else open('/run/secrets/admin_username','r').read().strip()
-admin_password = os.environ['ADMIN_USERNAME'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
+admin_password = os.environ['ADMIN_PASSWORD'] if 'ADMIN_PASSWORD' in os.environ else open('/run/secrets/admin_password','r').read().strip()
 
 # Some configs:
 GEOSERVER_INTERNAL_URL = os.environ.get('GEOSERVER_BASE_URL', 'http://geoserver:8080/geoserver/')
