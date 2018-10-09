@@ -30,6 +30,9 @@ fi
 
 echo "BASEURL is $BASEURL"
 
+GEONODE_INTERNAL_URL=${GEONODE_INTERNAL_URL:-http://nginx}
+echo "GEONODE_INTERNAL_URL is $GEONODE_INTERNAL_URL"
+
 ############################
 # 1. Initializing Geodatadir
 ############################
@@ -90,7 +93,7 @@ while true; do
   fi
 done
 
-if -f ${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml
+if [ -f "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml" ]
 then
     sed -i -r "s|<cliendId>.*</cliendId>|<cliendId>$CLIENT_ID</cliendId>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
     sed -i -r "s|<clientSecret>.*</clientSecret>|<clientSecret>$CLIENT_SECRET</clientSecret>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
@@ -99,14 +102,14 @@ then
     sed -i -r "s|<redirectUri>.*</redirectUri>|<redirectUri>$BASEURL/geoserver/index.html</redirectUri>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
     sed -i -r "s|<logoutUri>.*</logoutUri>|<logoutUri>$BASEURL/account/logout/</logoutUri>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
     # OAuth endpoints (server)
-    sed -i -r "s|<accessTokenUri>.*</accessTokenUri>|<accessTokenUri>http://nginx/o/token/</accessTokenUri>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
-    sed -i -r "s|<checkTokenEndpointUrl>.*</checkTokenEndpointUrl>|<checkTokenEndpointUrl>http://nginx/api/o/v4/tokeninfo/</checkTokenEndpointUrl>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
+    sed -i -r "s|<accessTokenUri>.*</accessTokenUri>|<accessTokenUri>${GEONODE_INTERNAL_URL}/o/token/</accessTokenUri>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
+    sed -i -r "s|<checkTokenEndpointUrl>.*</checkTokenEndpointUrl>|<checkTokenEndpointUrl>${GEONODE_INTERNAL_URL}/api/o/v4/tokeninfo/</checkTokenEndpointUrl>|" "${GEOSERVER_DATA_DIR}/security/filter/geonode-oauth2/config.xml"
 fi
 
 # Edit /security/role/geonode REST role service/config.xml
-if -f "${GEOSERVER_DATA_DIR}/security/role/geonode REST role service/config.xml"
+if [ -f "${GEOSERVER_DATA_DIR}/security/role/geonode REST role service/config.xml" ]
 then
-    sed -i -r "s|<baseUrl>.*</baseUrl>|<baseUrl>http://nginx</baseUrl>|" "${GEOSERVER_DATA_DIR}/security/role/geonode REST role service/config.xml"
+    sed -i -r "s|<baseUrl>.*</baseUrl>|<baseUrl>${GEONODE_INTERNAL_URL}</baseUrl>|" "${GEOSERVER_DATA_DIR}/security/role/geonode REST role service/config.xml"
 fi
 
 CLIENT_ID=""

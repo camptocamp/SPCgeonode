@@ -32,7 +32,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 SECRET_KEY = hashlib.sha512(admin_username + admin_password).hexdigest()
 
 # We define ALLOWED_HOSTS
-ALLOWED_HOSTS = ['nginx','127.0.0.1'] # We need this for internal api calls from geoserver and for healthchecks
+ALLOWED_HOSTS = ['nginx','127.0.0.1','django'] # We need this for internal api calls from geoserver and for healthchecks
 if os.getenv('HTTPS_HOST'):
     ALLOWED_HOSTS.append( os.getenv('HTTPS_HOST') )
 if os.getenv('HTTP_HOST'):
