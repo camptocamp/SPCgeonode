@@ -25,7 +25,7 @@ OGC_SERVER['default']['PASSWORD'] = admin_password
 INSTALLED_APPS += ('django_celery_monitor','django_celery_results',) # TODO : add django-celery-monitor to core geonode
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TASK_IGNORE_RESULT = False
-CELERY_BROKER_URL = 'amqp://rabbitmq:5672'
+CELERY_BROKER_URL = os.environ.get('BROKER_URL', 'amqp://rabbitmq:5672')
 CELERY_RESULT_BACKEND = 'django-db'
 
 # We randomize the secret key (based on admin login)
