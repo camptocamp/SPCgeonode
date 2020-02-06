@@ -17,7 +17,7 @@ RUN apt-get update && \
 
 # Install python dependencies
 RUN pip install --no-cache-dir pygdal==$(gdal-config --version).* celery==4.1.0
-RUN pip install --no-cache-dir git+https://github.com/GFDRR/geonode.git@rebase_2.8.x
+RUN pip install --no-cache-dir git+https://github.com/tonio/geonode.git@rebase_2.10.x
 
 # 5. Add the application
 WORKDIR /spcgeonode/
