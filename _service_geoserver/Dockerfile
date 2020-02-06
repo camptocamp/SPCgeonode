@@ -13,7 +13,7 @@ WORKDIR /
 # TODO : merge into on step
 RUN echo "Download geoserver for geonode" && \
     wget https://downloads.sourceforge.net/project/geoserver/GeoServer/2.14.0/geoserver-2.14.0-bin.zip && \
-    wget http://build.geonode.org/geoserver/latest/geoserver-2.14.x.war && \
+    wget --no-check-certificate https://build.geo-solutions.it/geonode/geoserver/latest/geoserver-2.14.x.war && \
     unzip geoserver-2.14.0-bin.zip && \
     rm /geoserver-2.14.0-bin.zip && \
     rm /geoserver-2.14.0/webapps/geoserver/* -rf && \
@@ -23,7 +23,7 @@ RUN echo "Download geoserver for geonode" && \
 
 
 # Download initial data dir
-RUN wget http://build.geonode.org/geoserver/latest/data-2.14.x.zip && \
+RUN wget --no-check-certificate https://build.geo-solutions.it/geonode/geoserver/latest/data-2.14.x.zip && \
     unzip /data-2.14.x.zip && \
     rm /data-2.14.x.zip
 
