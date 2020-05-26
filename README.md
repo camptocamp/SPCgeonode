@@ -6,7 +6,7 @@ Make sure you have a version of Docker (tested with 17.12) and docker-compose.
 
 ```
 # Checkout the source
-git clone -b gfdrr https://github.com/tonio/SPCgeonode.git
+git clone --recursive -b gfdrr https://github.com/tonio/SPCgeonode.git
 ```
 
 ## Usage
