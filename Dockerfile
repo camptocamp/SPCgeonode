@@ -1,3 +1,17 @@
+# Build css files
+FROM node:10-alpine AS node
+
+RUN npm install -g grunt
+
+# RUN pip install --no-cache-dir git+https://github.com/GFDRR/geonode.git@rebase_2.10.x
+ADD geonode /geonode
+
+# Build css files
+RUN cd /geonode/geonode/static \
+    && npm install \
+    && grunt production
+
+
 # TODO : use python:2.7.13-alpine3.6 to make this lighter ( it is what we use for letsencryipt as well)
 # But it seems it's not possible for now because alpine only has geos 3.6 which is not supported by django 1.8
 # (probably because of https://code.djangoproject.com/ticket/28441)
@@ -18,9 +32,10 @@ RUN apt-get update && \
 # Install python dependencies
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir pygdal==$(gdal-config --version).* celery==4.1.0
-# RUN pip install --no-cache-dir git+https://github.com/tonio/geonode.git@rebase_2.10.x
-ADD geonode /geonode
-RUN pip install /geonode
+COPY geonode/requirements.txt /geonode/requirements.txt
+RUN pip install --no-cache-dir -r /geonode/requirements.txt
+COPY --from=node /geonode /geonode
+RUN pip install --no-cache-dir --no-deps /geonode
 
 # 5. Add the application
 WORKDIR /spcgeonode/
