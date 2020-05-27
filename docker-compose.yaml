@@ -1,0 +1,175 @@
+version: '2'
+volumes:
+  geoserver_datadir:
+    external: true
+    driver: 'null'
+  apache_nas_data:
+    external: true
+    driver: 'null'
+  geoserver_geodata:
+    external: true
+    driver: 'null'
+  geonode_config:
+    external: true
+    driver: 'null'
+services:
+  geoserver:
+    image: camptocamp/geonode_geoserver:${geonode_tag}
+    environment:
+      ADMIN_PASSWORD: '${admin_password}'
+      ADMIN_USERNAME: 'admin'
+      GEOSERVER_DATA_DIR: /mnt/geoserver_datadir
+      GEOSERVER_DB_HOST: postgres
+      GEOSERVER_DB_USER: geonode
+      HTTPS_HOST: ${fqdn}
+      HTTPS_PORT: 443
+      PGPASSWORD: geonode
+      GEONODE_INTERNAL_URL: http://django:8000
+    external_links:
+    - postgres-cluster/lb:postgres
+    - postgres-cluster/lb:postgis
+    volumes:
+    - geoserver_datadir:/mnt/geoserver_datadir
+    - geoserver_geodata:/mnt/geoserver_geodata
+    labels:
+      io.rancher.scheduler.affinity:host_label: application=true
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+  django:
+    image: camptocamp/geonode_django:${geonode_tag}
+    environment: &geonode_env
+      ALLOWED_HOSTS: '[''django'',''celery'']'
+      BROKER_URL: amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
+      DATABASE_URL: postgres://geonode:geonode@lb.postgres-cluster:5432/geonode
+      HTTPS_HOST: ${fqdn}
+      HTTPS_PORT: 443
+      DEBUG: "False"
+      ADMIN_USERNAME: 'admin'
+      ADMIN_PASSWORD: '${admin_password}'
+      ADMIN_EMAIL: 'info@camptocamp.com'
+      GEOSERVER_BASE_URL: http://geoserver:8080/geoserver/
+      GEOSERVER_PUBLIC_URL: https://${fqdn}/geoserver/
+      DEFAULT_WORKSPACE: hazard
+      MEDIA_ROOT: /mnt/apache_nas_data/uploaded/
+      STATIC_ROOT: /mnt/apache_nas_data/static/
+      SECRET_KEY: ${secret_key}
+      MAP_BASELAYERS: |
+        [{
+           "source": {
+             "ptype": "gxp_wmscsource",
+             "url": "https://${fqdn}/geoserver/wms",
+             "restUrl": "/gs/rest"
+           }
+        },{
+          "source": {"ptype": "gxp_olsource"},
+          "type":"OpenLayers.Layer",
+          "args":["No background"],
+          "visibility": false,
+          "fixed": true,
+          "group":"background"
+        }, {
+          "source": {"ptype": "gxp_olsource"},
+          "type":"OpenLayers.Layer.OSM",
+          "args":["OpenStreetMap"],
+          "visibility": false,
+          "fixed": true,
+          "group":"background"
+        }, {
+          "source": {"ptype": "gxp_mapquestsource"},
+          "name":"osm",
+          "group":"background",
+          "visibility": false
+        }, {
+          "source": {"ptype": "gxp_mapquestsource"},
+          "name":"naip",
+          "group":"background",
+          "visibility": false
+        }, {
+          "source": {"ptype": "gxp_olsource"},
+          "type":"OpenLayers.Layer.XYZ",
+          "group":"background",
+          "visibility": true,
+          "fixed": true,
+          "args":[ "mapbox",
+                   ["https://a.tiles.mapbox.com/v4/ingenieroariel.m9a2h374/$$$${z}/$$$${x}/$$$${y}.png?access_token=pk.eyJ1IjoiaW5nZW5pZXJvYXJpZWwiLCJhIjoibXhDZ3pIMCJ9.qTmPYCbnUKtaNFkvKKysAQ",
+                    "https://b.tiles.mapbox.com/v4/ingenieroariel.m9a2h374/$$$${z}/$$$${x}/$$$${y}.png?access_token=pk.eyJ1IjoiaW5nZW5pZXJvYXJpZWwiLCJhIjoibXhDZ3pIMCJ9.qTmPYCbnUKtaNFkvKKysAQ",
+                    "https://c.tiles.mapbox.com/v4/ingenieroariel.m9a2h374/$$$${z}/$$$${x}/$$$${y}.png?access_token=pk.eyJ1IjoiaW5nZW5pZXJvYXJpZWwiLCJhIjoibXhDZ3pIMCJ9.qTmPYCbnUKtaNFkvKKysAQ"],
+                   {"transitionEffect": "resize","attribution": "osm_attribution"}
+          ]
+        }]
+    volumes:
+    - apache_nas_data:/mnt/apache_nas_data
+    - /tmp
+    entrypoint: ["/spcgeonode/docker-entrypoint.sh"]
+    command:
+    - uwsgi
+    - --chdir=/spcgeonode
+    - --module=spcgeonode.wsgi
+    - --http=:8000
+    - --processes=3
+    - --max-requests=1000
+    labels:
+      io.rancher.scheduler.affinity:host_label: application=true
+      io.rancher.sidekicks: cleanup
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+  cleanup:
+    image: ubuntu:18.04
+    command:
+      - find
+      - /tmp
+      - -maxdepth
+      - '1'
+      - -mindepth
+      - '1'
+      - -name
+      - tmp*
+      - -type
+      - d
+      - -not
+      - -mmin
+      - '-300'
+      - -exec
+      - rm
+      - -rfv
+      - '{}'
+      - ;
+    labels:
+      io.rancher.container.start_once: 'true'
+      io.rancher.container.hostname_override: container_name
+      cron.schedule: '@hourly'
+    volumes_from:
+      - django
+  celery:
+    image: camptocamp/geonode_django:${geonode_tag}
+    environment: *geonode_env
+    entrypoint: ["celery"]
+    volumes:
+    - apache_nas_data:/mnt/apache_nas_data
+    command:
+    - worker
+    - --app=geonode.celery_app:app
+    - --broker=amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
+    - -l
+    - DEBUG
+    - -E
+    labels:
+      io.rancher.scheduler.affinity:host_label: application=true
+      io.rancher.container.hostname_override: container_name
+      io.rancher.container.pull_image: always
+  celery-beat:
+    image: camptocamp/geonode_django:${geonode_tag}
+    environment: *geonode_env
+    entrypoint: ["celery"]
+    volumes:
+    - apache_nas_data:/mnt/apache_nas_data
+    command:
+    - beat
+    - --app=geonode.celery_app:app
+    - --broker=amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
+    - -l
+    - DEBUG
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.affinity:host_label: application=true
+      io.rancher.container.hostname_override: container_name
