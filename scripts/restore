@@ -1,0 +1,45 @@
+#!/bin/bash
+
+REMOTE=wb-gfdrr-geonode-sftp
+DATA_PATH=/home/amorvan/data/worldbank/geonode-int
+
+rsync -avz ${REMOTE}:/mnt/geonode_config ${DATA_PATH}/geonode_config
+rsync -avz \
+    --exclude=data \
+    --exclude=.git \
+    ${REMOTE}:/mnt/geoserver_datadir/ ${DATA_PATH}/geoserver_datadir/
+
+docker volume create \
+    --name spcgeonode_geonode_config \
+    --opt type=none \
+    --opt device=${DATA_PATH}/geonode_config \
+    --opt o=bind
+
+docker volume create \
+    --name spcgeonode_geoserver_datadir \
+    --opt type=none \
+    --opt device=${DATA_PATH}/geoserver_datadir \
+    --opt o=bind
+
+mkdir ${DATA_PATH}/postgres
+docker volume create \
+    --name spcgeonode_postgres \
+    --opt type=none \
+    --opt device=${DATA_PATH}/postgres \
+    --opt o=bind
+
+# Geonode database
+
+export PGPASSWORD=geonode
+ssh ${REMOTE} pg_dump -Fc -h lb.postgres-cluster -U geonode -d genode > ${DATA_PATH}/geonode.backup
+
+cat <<EOF | docker exec -i --user postgres spcgeonode_postgres_1 psql
+DROP DATABASE IF EXISTS geonode;
+DROP ROLE IF EXISTS geonode;
+
+CREATE USER geonode WITH PASSWORD 'geonode';
+CREATE DATABASE geonode OWNER geonode;
+EOF
+
+cat ${DATA_PATH}/geonode.backup | \
+    docker exec -i --user postgres spcgeonode_postgres_1 pg_restore -d geonode
