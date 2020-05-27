@@ -1,18 +1,34 @@
 version: '2'
 volumes:
+  postgres:
+    external:
+      name: spcgeonode_postgres
+  static:
+  media:
   geoserver_datadir:
-    external: true
-    driver: 'null'
-  apache_nas_data:
-    external: true
-    driver: 'null'
+    external:
+      name: spcgeonode_geoserver_datadir
   geoserver_geodata:
-    external: true
-    driver: 'null'
   geonode_config:
-    external: true
-    driver: 'null'
+    external:
+      name: spcgeonode_geonode_config
 services:
+  postgres:
+    image: camptocamp/postgres:9.5
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+    restart: on-failure
+  nginx:
+    image: olivierdalang/spcgeonode:nginx-latest
+    build: _service_nginx/
+    environment:
+      - HTTP_HOST=${HTTP_HOST}
+      - RESOLVER=127.0.0.11
+    ports:
+      - "${HTTP_PORT}:80"
+    volumes:
+      - static:/spcgeonode-static/
+      - media:/spcgeonode-media/
   geoserver:
     image: camptocamp/geonode_geoserver:${geonode_tag}
     environment:
@@ -25,9 +41,6 @@ services:
       HTTPS_PORT: 443
       PGPASSWORD: geonode
       GEONODE_INTERNAL_URL: http://django:8000
-    external_links:
-    - postgres-cluster/lb:postgres
-    - postgres-cluster/lb:postgis
     volumes:
     - geoserver_datadir:/mnt/geoserver_datadir
     - geoserver_geodata:/mnt/geoserver_geodata
@@ -40,7 +53,7 @@ services:
     environment: &geonode_env
       ALLOWED_HOSTS: '[''django'',''celery'']'
       BROKER_URL: amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
-      DATABASE_URL: postgres://geonode:geonode@lb.postgres-cluster:5432/geonode
+      DATABASE_URL: postgres://geonode:geonode@postgres:5432/geonode
       HTTPS_HOST: ${fqdn}
       HTTPS_PORT: 443
       DEBUG: "False"
@@ -98,7 +111,8 @@ services:
           ]
         }]
     volumes:
-    - apache_nas_data:/mnt/apache_nas_data
+    - static:/mnt/apache_nas_data/static
+    - media:/mnt/apache_nas_data/uploaded
     - /tmp
     entrypoint: ["/spcgeonode/docker-entrypoint.sh"]
     command:
@@ -113,63 +127,3 @@ services:
       io.rancher.sidekicks: cleanup
       io.rancher.container.hostname_override: container_name
       io.rancher.container.pull_image: always
-  cleanup:
-    image: ubuntu:18.04
-    command:
-      - find
-      - /tmp
-      - -maxdepth
-      - '1'
-      - -mindepth
-      - '1'
-      - -name
-      - tmp*
-      - -type
-      - d
-      - -not
-      - -mmin
-      - '-300'
-      - -exec
-      - rm
-      - -rfv
-      - '{}'
-      - ;
-    labels:
-      io.rancher.container.start_once: 'true'
-      io.rancher.container.hostname_override: container_name
-      cron.schedule: '@hourly'
-    volumes_from:
-      - django
-  celery:
-    image: camptocamp/geonode_django:${geonode_tag}
-    environment: *geonode_env
-    entrypoint: ["celery"]
-    volumes:
-    - apache_nas_data:/mnt/apache_nas_data
-    command:
-    - worker
-    - --app=geonode.celery_app:app
-    - --broker=amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
-    - -l
-    - DEBUG
-    - -E
-    labels:
-      io.rancher.scheduler.affinity:host_label: application=true
-      io.rancher.container.hostname_override: container_name
-      io.rancher.container.pull_image: always
-  celery-beat:
-    image: camptocamp/geonode_django:${geonode_tag}
-    environment: *geonode_env
-    entrypoint: ["celery"]
-    volumes:
-    - apache_nas_data:/mnt/apache_nas_data
-    command:
-    - beat
-    - --app=geonode.celery_app:app
-    - --broker=amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
-    - -l
-    - DEBUG
-    labels:
-      io.rancher.container.pull_image: always
-      io.rancher.scheduler.affinity:host_label: application=true
-      io.rancher.container.hostname_override: container_name
