@@ -1,4 +1,4 @@
-# SPCgeonode [![Build Status](https://travis-ci.org/tonio/SPCgeonode.svg?branch=gfdrr)](https://travis-ci.org/tonio/SPCgeonode)
+# SPCgeonode
 
 ## Prerequisites
 
@@ -6,71 +6,51 @@ Make sure you have a version of Docker (tested with 17.12) and docker-compose.
 
 ```
 # Checkout the source
-git clone --recursive -b gfdrr https://github.com/tonio/SPCgeonode.git
+git clone --recursive -b gfdrr https://github.com/camptocamp/SPCgeonode.git
 ```
 
 ## Usage
 
 ### Development
 
-To start the whole stack
+To start the whole stack:
+
 ```
 docker-compose up --build -d
 ```
 
-Once everything started, you should be able to open http://127.0.0.1 in your browser.
+Once everything started, you should be able to open http://127.0.0.1:8080 in your browser.
 
-### Production (using composer)
+### Debug less files
 
-Using a text editor, edit the follow files :
+Add docker-compose.override.yaml file with following content:
+
 ```
-# General configuration
-.env
-
-# Admin username and password
-_secrets/admin_username
-_secrets/admin_password
-
-# Backup (optional)
-_secrets/rclone.backup.conf
+version: '2'
+services:
+  django:
+    volumes:
+      - ./geonode/geonode:/usr/local/lib/python2.7/site-packages/geonode
 ```
 
-When ready, start the stack using this command :
-```
-# Run the stack
-docker-compose -f docker-compose.yml up -d --build
-```
+And each time you modify the files, transpile less files to css files:
 
-### Upgrade
-
-If at some point you want to update the SPCgeonode setup (this will work only if you didn't do modifications, if you did, you need to merge them) :
 ```
-# Get the update setup
-git pull
-
-# Upgrade the stack
-docker-compose -f docker-compose.yml up -d --build
+make update-css
 ```
 
-### Developpement vs Production
-
-Difference of dev setup vs prod setup:
-
-- Django source is mounted on the host and uwsgi does live reload (so that edits to the python code is reloaded live)
-- Django static and media folder, Geoserver's data folder and Certificates folder are mounted on the host (just to easily see what's happening)
-- Django debug is set to True
-- Postgres's port 5432 is exposed (to allow debugging using pgadmin)
-- Nginx debug mode is acticated (not really sure what this changes)
-- Docker tags are set to dev instead of latest
+Refresh the page in your browser, styling should be up to date.
 
 ### Publishing the images
 
-Pushes to github trigger automatic builds on docker hub for tags looking like x.x.x
-
-Sometimes, the automatic builds fail with no apparent reason. If so, you can publish the images manually with :
+Push the images on docker hub:
 
 ```
-docker login
-docker-compose -f docker-compose.yml build
-docker-compose -f docker-compose.yml push
+make docker-push
 ```
+
+## Links
+
+Geonode source: https://github.com/GFDRR/geonode
+
+Deployment on Rancher: https://github.com/camptocamp/terraform-geonode
