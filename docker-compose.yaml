@@ -51,8 +51,6 @@ services:
       io.rancher.container.pull_image: always
   django:
     build: .
-    ports:
-      - "8000:8000"
     image: camptocamp/geonode_django:${geonode_tag}
     environment: &geonode_env
       ALLOWED_HOSTS: '[''django'',''celery'']'
