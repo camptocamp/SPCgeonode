@@ -30,6 +30,7 @@ services:
       - static:/spcgeonode-static/
       - media:/spcgeonode-media/
   geoserver:
+    build: _service_geoserver/
     image: camptocamp/geonode_geoserver:${geonode_tag}
     environment:
       ADMIN_PASSWORD: '${admin_password}'
@@ -49,6 +50,9 @@ services:
       io.rancher.container.hostname_override: container_name
       io.rancher.container.pull_image: always
   django:
+    build: .
+    ports:
+      - "8000:8000"
     image: camptocamp/geonode_django:${geonode_tag}
     environment: &geonode_env
       ALLOWED_HOSTS: '[''django'',''celery'']'
