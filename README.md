@@ -13,6 +13,8 @@ git clone --recursive -b gfdrr https://github.com/camptocamp/SPCgeonode.git
 
 ### Development
 
+Have a look a file script/restore, customize if needed, and execute parts you need to get a working configuration and database.
+
 To start the whole stack:
 
 ```
@@ -51,6 +53,6 @@ make docker-push
 
 ## Links
 
-Geonode source: https://github.com/GFDRR/geonode
+Geonode source <https://github.com/GFDRR/geonode>
 
-Deployment on Rancher: https://github.com/camptocamp/terraform-geonode
+Deployment on Rancher <https://github.com/camptocamp/terraform-geonode>
