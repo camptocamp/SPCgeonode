@@ -76,3 +76,5 @@ PASSWORD_HASHERS = (
     'spcgeonode.hashers.GeoserverDigestPasswordHasher',
     'spcgeonode.hashers.GeoserverPlainPasswordHasher',
 )
+
+ACCOUNT_OPEN_SIGNUP = False
