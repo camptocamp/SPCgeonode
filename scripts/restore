@@ -4,6 +4,12 @@ REMOTE=wb-gfdrr-geonode-prod-sftp
 DATA_PATH=/home/amorvan/data/worldbank/geonode-prod
 
 docker volume create \
+    --name spcgeonode_uploaded \
+    --opt type=none \
+    --opt device=${DATA_PATH}/uploaded \
+    --opt o=bind
+
+docker volume create \
     --name spcgeonode_geonode_config \
     --opt type=none \
     --opt device=${DATA_PATH}/geonode_config \

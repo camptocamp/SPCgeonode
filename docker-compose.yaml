@@ -4,7 +4,9 @@ volumes:
     external:
       name: spcgeonode_postgres
   static:
-  media:
+  uploaded:
+    external:
+      name: spcgeonode_uploaded
   geoserver_datadir:
     external:
       name: spcgeonode_geoserver_datadir
@@ -28,7 +30,7 @@ services:
       - "${HTTP_PORT}:80"
     volumes:
       - static:/spcgeonode-static/
-      - media:/spcgeonode-media/
+      - uploaded:/spcgeonode-media/
   geoserver:
     build: _service_geoserver/
     image: camptocamp/geonode_geoserver:${geonode_tag}
@@ -114,7 +116,7 @@ services:
         }]
     volumes:
     - static:/mnt/apache_nas_data/static
-    - media:/mnt/apache_nas_data/uploaded
+    - uploaded:/mnt/apache_nas_data/uploaded
     - /tmp
     entrypoint: ["/spcgeonode/docker-entrypoint.sh"]
     command:
