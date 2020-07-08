@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#REMOTE=wb-gfdrr-geonode-int-sftp
+#DATA_PATH=/home/amorvan/data/worldbank/geonode-int
+
+REMOTE=wb-gfdrr-geonode-prod-sftp
+DATA_PATH=/home/amorvan/data/worldbank/geonode-prod
+
+cat <<EOF | ssh ${REMOTE}
+export PGHOST=lb.postgres-cluster
+export PGUSER=postgres
+export PGPASSWORD=oiBaav7f
+pg_dump -Fc -d geonode > /tmp/geonode.backup
+pg_dump -Fc -d geoserver > /tmp/geoserver.backup
+EOF
+
+scp ${REMOTE}:/tmp/geonode.backup ${DATA_PATH}/
+scp ${REMOTE}:/tmp/geoserver.backup ${DATA_PATH}/
+
+ssh ${REMOTE} rm -f /tmp/geonode.backup
+ssh ${REMOTE} rm -f /tmp/geoserver.backup
+
+rsync -avz ${REMOTE}:/mnt/geonode_config ${DATA_PATH}/geonode_config
+rsync -avz \
+    --exclude=data \
+    --exclude=.git \
+    --exclude=gwc \
+    ${REMOTE}:/mnt/geoserver_datadir/ ${DATA_PATH}/geoserver_datadir/

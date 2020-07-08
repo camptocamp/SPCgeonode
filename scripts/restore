@@ -1,13 +1,7 @@
-#!/bin/bash
+#!/bin/bash -ex
 
-REMOTE=wb-gfdrr-geonode-sftp
-DATA_PATH=/home/amorvan/data/worldbank/geonode-int
-
-rsync -avz ${REMOTE}:/mnt/geonode_config ${DATA_PATH}/geonode_config
-rsync -avz \
-    --exclude=data \
-    --exclude=.git \
-    ${REMOTE}:/mnt/geoserver_datadir/ ${DATA_PATH}/geoserver_datadir/
+REMOTE=wb-gfdrr-geonode-prod-sftp
+DATA_PATH=/home/amorvan/data/worldbank/geonode-prod
 
 docker volume create \
     --name spcgeonode_geonode_config \
@@ -21,6 +15,7 @@ docker volume create \
     --opt device=${DATA_PATH}/geoserver_datadir \
     --opt o=bind
 
+sudo rm -rf ${DATA_PATH}/postgres
 mkdir ${DATA_PATH}/postgres
 docker volume create \
     --name spcgeonode_postgres \
@@ -28,18 +23,35 @@ docker volume create \
     --opt device=${DATA_PATH}/postgres \
     --opt o=bind
 
-# Geonode database
+# Geonode and Geoserver databases
 
-export PGPASSWORD=geonode
-ssh ${REMOTE} pg_dump -Fc -h lb.postgres-cluster -U geonode -d genode > ${DATA_PATH}/geonode.backup
+docker-compose down
+docker-compose up -d postgres
+
+sleep 1
+
+until docker-compose exec --user postgres postgres psql -c '\l'; do
+  echo >&2 "$(date +%H:%M:%S) Postgres is unavailable - sleeping"
+  sleep 1
+done
 
 cat <<EOF | docker exec -i --user postgres spcgeonode_postgres_1 psql
 DROP DATABASE IF EXISTS geonode;
+DROP DATABASE IF EXISTS geoserver;
+
 DROP ROLE IF EXISTS geonode;
+DROP ROLE IF EXISTS geoserver;
 
 CREATE USER geonode WITH PASSWORD 'geonode';
+CREATE USER geoserver WITH PASSWORD 'geoserver';
+
 CREATE DATABASE geonode OWNER geonode;
+CREATE DATABASE geoserver OWNER geonode;
 EOF
 
 cat ${DATA_PATH}/geonode.backup | \
     docker exec -i --user postgres spcgeonode_postgres_1 pg_restore -d geonode
+cat ${DATA_PATH}/geoserver.backup | \
+    docker exec -i --user postgres spcgeonode_postgres_1 pg_restore -d geoserver
+
+# docker-compose run --rm django python manage.py migrate
