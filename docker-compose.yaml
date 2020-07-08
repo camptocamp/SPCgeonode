@@ -39,7 +39,7 @@ services:
       GEOSERVER_DB_HOST: postgres
       GEOSERVER_DB_USER: geonode
       HTTPS_HOST: ${fqdn}
-      HTTPS_PORT: 443
+      HTTPS_PORT: 8080
       PGPASSWORD: geonode
       GEONODE_INTERNAL_URL: http://django:8000
     volumes:
@@ -57,13 +57,13 @@ services:
       BROKER_URL: amqp://guest:guest@rabbitmq.geonode-rabbitmq:5672/
       DATABASE_URL: postgres://geonode:geonode@postgres:5432/geonode
       HTTPS_HOST: ${fqdn}
-      HTTPS_PORT: 443
+      HTTPS_PORT: 8080
       DEBUG: "False"
       ADMIN_USERNAME: 'admin'
       ADMIN_PASSWORD: '${admin_password}'
       ADMIN_EMAIL: 'info@camptocamp.com'
       GEOSERVER_BASE_URL: http://geoserver:8080/geoserver/
-      GEOSERVER_PUBLIC_URL: https://${fqdn}/geoserver/
+      GEOSERVER_PUBLIC_URL: https://${fqdn}:8080/geoserver/
       DEFAULT_WORKSPACE: hazard
       MEDIA_ROOT: /mnt/apache_nas_data/uploaded/
       STATIC_ROOT: /mnt/apache_nas_data/static/
@@ -72,7 +72,7 @@ services:
         [{
            "source": {
              "ptype": "gxp_wmscsource",
-             "url": "https://${fqdn}/geoserver/wms",
+             "url": "https://${fqdn}:8080/geoserver/wms",
              "restUrl": "/gs/rest"
            }
         },{
