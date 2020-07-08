@@ -7,6 +7,8 @@ This script initializes Geonode
 #########################################################
 
 import os, requests, json, uuid, django, time
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spcgeonode.settings')
 django.setup()
 
@@ -110,6 +112,17 @@ call_command('loaddata', 'initial_data')
 
 print("-----------------------------------------------------")
 print("5. Running updatemaplayerip")
+
+print("Waiting for geoserver")
+retry = Retry(
+    total=10,
+    backoff_factor=2,
+)
+session = requests.Session()
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.get(os.environ["GEOSERVER_BASE_URL"])
+
 # call_command('updatelayers') # TODO CRITICAL : this overrides the layer thumbnail of existing layers even if unchanged !!!
 call_command('updatemaplayerip')
 
