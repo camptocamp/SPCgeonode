@@ -51,6 +51,7 @@ elif os.getenv('HTTP_HOST'):
     )
 else:
     raise Exception("Misconfiguration error. You need to set at least one of HTTPS_HOST or HTTP_HOST")
+ACCOUNT_LOGOUT_REDIRECT_URL = SITEURL
 
 # Manually replace SITEURL whereever it is used in geonode's settings.py (those settings are a mess...)
 GEOSERVER_LOCATION = os.environ.get('GEOSERVER_BASE_URL', 'http://geoserver:8080/geoserver/')
