@@ -9,6 +9,14 @@ Make sure you have a version of Docker (tested with 17.12) and docker-compose.
 git clone --recursive -b gfdrr https://github.com/camptocamp/SPCgeonode.git
 ```
 
+## Schema
+
+Here is the schema of the development architecture based on Docker Compose:
+
+![Schema](doc/schema-dev.png)
+
+For production see: [Production schema](doc/schema-prod.png)
+
 ## Usage
 
 ### Development
